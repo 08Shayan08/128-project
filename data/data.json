@@ -1,0 +1,60 @@
+{
+  "services": [
+    {
+      "title": "Social Media Management",
+      "desc": "End-to-end management of your social channels, including content scheduling, community engagement, and performance reporting. We keep your brand consistent, active, and audience-focused."
+    },
+    {
+      "title": "Content Creation",
+      "desc": "Professional visuals, captions, reels, and campaign assets designed to match your brand voice. Our content is built to capture attention and support measurable growth."
+    },
+    {
+      "title": "Paid Advertising",
+      "desc": "Strategic ad campaigns across platforms like Meta, TikTok, LinkedIn, and Google. We optimize targeting, creative, and budgets to improve conversions and return on spend."
+    },
+    {
+      "title": "Branding",
+      "desc": "Clear brand positioning, messaging, and visual direction for businesses that want to stand out. We help create a recognizable identity across every digital touchpoint."
+    },
+    {
+      "title": "Influencer Marketing",
+      "desc": "Partnership planning, creator outreach, and campaign coordination with influencers who align with your audience. We focus on authentic collaborations that build trust and visibility."
+    }
+  ],
+  "team": [
+    {
+      "name": "Shayan",
+      "role": "Founder"
+    },
+    {
+      "name": "",
+      "role": "Marketing Strategist"
+    },
+    {
+      "name": "Nina Patel",
+      "role": "Content Creator"
+    },
+    {
+      "name": "Lucas Bennett",
+      "role": "Developer"
+    }
+  ],
+  "testimonials": [
+    {
+      "name": "Amira Khalid",
+      "text": "The team helped us clarify our brand message and turn social media into a real source of qualified leads."
+    },
+    {
+      "name": "Daniel Brooks",
+      "text": "Their content strategy gave our campaigns a sharper direction and noticeably improved engagement within weeks."
+    },
+    {
+      "name": "Sofia Martinez",
+      "text": "PulseReach brought structure, creativity, and clear reporting to every stage of our marketing workflow."
+    },
+    {
+      "name": "Ethan Wright",
+      "text": "Their paid advertising approach helped us scale confidently while keeping our acquisition costs under control."
+    }
+  ]
+} 
