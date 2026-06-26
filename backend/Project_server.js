@@ -3,6 +3,7 @@ const fs = require('fs');
 const url = require('url');
 const mysql = require('mysql2');
 const path = require('path');
+const crypto = require('crypto');
 
 // Load .env file if present (no external package needed)
 try {
@@ -20,7 +21,14 @@ const con = mysql.createConnection({
   multipleStatements: true
 });
 
-// All seed data matching data.json
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+// Active session tokens (in-memory; resets on server restart)
+const activeSessions = new Set();
+
+// Seed data
 const seedData = {
   Services: [
     ['Social Media Management', 'End-to-end management of your social channels, including content scheduling, community engagement, and performance reporting. We keep your brand consistent, active, and audience-focused.'],
@@ -54,6 +62,10 @@ const seedData = {
     [2023, 'Top Social Media Agency', 'MENA Marketing Summit'],
     [2024, 'Excellence in Paid Media', 'Global Ad Awards'],
     [2025, 'Fastest Growing Agency', 'Forbes Middle East']
+  ],
+  // Default admin: username=admin password=admin123
+  Admins: [
+    ['admin', hashPassword('admin123')]
   ]
 };
 
@@ -61,10 +73,8 @@ function seedTableIfEmpty(table, columns, rows, callback) {
   con.query(`SELECT COUNT(*) AS count FROM ${table}`, (err, result) => {
     if (err) return callback(err);
     if (result[0].count > 0) return callback(null);
-
     const placeholders = rows.map(row => `(${row.map(() => '?').join(', ')})`).join(', ');
-    const values = rows.flat();
-    con.query(`INSERT INTO ${table} (${columns}) VALUES ${placeholders}`, values, callback);
+    con.query(`INSERT INTO ${table} (${columns}) VALUES ${placeholders}`, rows.flat(), callback);
   });
 }
 
@@ -112,6 +122,19 @@ con.connect((err) => {
           message TEXT,
           submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS Admins (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          username VARCHAR(100) UNIQUE NOT NULL,
+          password_hash VARCHAR(64) NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS Subscribers (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          email VARCHAR(150) UNIQUE NOT NULL,
+          subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
       `, (err) => {
         if (err) throw err;
 
@@ -120,123 +143,169 @@ con.connect((err) => {
         seedTableIfEmpty('Testimonials', 'name, `text`', seedData.Testimonials, () => {});
         seedTableIfEmpty('CompanyHistory', 'year, milestone', seedData.CompanyHistory, () => {});
         seedTableIfEmpty('Awards', 'year, title, body', seedData.Awards, () => {});
+        seedTableIfEmpty('Admins', 'username, password_hash', seedData.Admins, () => {});
 
-        console.log('Database ready.');
+        console.log('Database ready — http://localhost:8080');
       });
     });
   });
 });
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 function parseBody(req, callback) {
   let body = '';
   req.on('data', chunk => { body += chunk.toString(); });
   req.on('end', () => {
-    try {
-      callback(null, JSON.parse(body));
-    } catch (e) {
-      callback(new Error('Invalid JSON'));
-    }
+    try { callback(null, JSON.parse(body)); }
+    catch (_) { callback(new Error('Invalid JSON')); }
   });
 }
 
+function getToken(req) {
+  const auth = req.headers['authorization'] || '';
+  return auth.startsWith('Bearer ') ? auth.slice(7) : null;
+}
+
+function isAuthenticated(req) {
+  const token = getToken(req);
+  return token && activeSessions.has(token);
+}
+
+function json(res, status, data) {
+  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(data));
+}
+
+// ── Request handler ───────────────────────────────────────────────────────────
+
 const server = http.createServer((req, res) => {
   const reqUrl = url.parse(req.url, true);
+  const { pathname } = reqUrl;
   const method = req.method;
 
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  if (method === 'OPTIONS') {
-    res.writeHead(204);
-    return res.end();
-  }
+  if (method === 'OPTIONS') { res.writeHead(204); return res.end(); }
 
-  // GET /data/data.json — serve all dynamic data from MySQL
-  if (method === 'GET' && reqUrl.pathname === '/data/data.json') {
-    const queries = [
-      'SELECT * FROM Services',
-      'SELECT * FROM Team',
-      'SELECT * FROM Testimonials',
-      'SELECT * FROM CompanyHistory ORDER BY year ASC',
-      'SELECT * FROM Awards ORDER BY year ASC'
-    ];
-
-    con.query(queries.join('; '), (err, results) => {
-      if (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        return res.end(JSON.stringify({ error: 'Database error' }));
+  // ── GET /data/data.json ── public site data from MySQL ──────────────────────
+  if (method === 'GET' && pathname === '/data/data.json') {
+    con.query(
+      'SELECT * FROM Services; SELECT * FROM Team; SELECT * FROM Testimonials; SELECT * FROM CompanyHistory ORDER BY year ASC; SELECT * FROM Awards ORDER BY year ASC',
+      (err, results) => {
+        if (err) return json(res, 500, { error: 'Database error' });
+        json(res, 200, {
+          services: results[0],
+          team: results[1],
+          testimonials: results[2],
+          history: results[3],
+          awards: results[4]
+        });
       }
+    );
 
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        services: results[0],
-        team: results[1],
-        testimonials: results[2],
-        history: results[3],
-        awards: results[4]
-      }));
-    });
-
-  // POST /api/contact — save contact form submission to Comments table
-  } else if (method === 'POST' && reqUrl.pathname === '/api/contact') {
+  // ── POST /api/contact ── save contact form message ──────────────────────────
+  } else if (method === 'POST' && pathname === '/api/contact') {
     parseBody(req, (err, data) => {
-      if (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        return res.end(JSON.stringify({ error: 'Invalid request body' }));
-      }
-
+      if (err) return json(res, 400, { error: 'Invalid request body' });
       const { name, email, message } = data;
-
-      if (!name || !email || !message) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        return res.end(JSON.stringify({ error: 'Name, email, and message are required.' }));
-      }
+      if (!name || !email || !message)
+        return json(res, 400, { error: 'Name, email, and message are required.' });
 
       con.query(
         'INSERT INTO Comments (name, email, message) VALUES (?, ?, ?)',
         [name.trim(), email.trim(), message.trim()],
         (err) => {
-          if (err) {
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            return res.end(JSON.stringify({ error: 'Could not save message.' }));
-          }
-
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, message: 'Your message has been saved.' }));
+          if (err) return json(res, 500, { error: 'Could not save message.' });
+          json(res, 200, { success: true, message: 'Your message has been received.' });
         }
       );
     });
 
-  // Serve static frontend files
-  } else {
-    let filePath = reqUrl.pathname === '/'
-      ? './frontend/index.html'
-      : './frontend' + reqUrl.pathname;
+  // ── POST /api/subscribe ── newsletter signup ─────────────────────────────────
+  } else if (method === 'POST' && pathname === '/api/subscribe') {
+    parseBody(req, (err, data) => {
+      if (err) return json(res, 400, { error: 'Invalid request body' });
+      const email = (data.email || '').trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+        return json(res, 400, { error: 'Please enter a valid email address.' });
 
+      con.query(
+        'INSERT INTO Subscribers (email) VALUES (?)',
+        [email],
+        (err) => {
+          if (err && err.code === 'ER_DUP_ENTRY')
+            return json(res, 409, { error: 'This email is already subscribed.' });
+          if (err) return json(res, 500, { error: 'Could not save subscription.' });
+          json(res, 200, { success: true, message: 'You are now subscribed!' });
+        }
+      );
+    });
+
+  // ── POST /api/login ── admin login ───────────────────────────────────────────
+  } else if (method === 'POST' && pathname === '/api/login') {
+    parseBody(req, (err, data) => {
+      if (err) return json(res, 400, { error: 'Invalid request body' });
+      const { username, password } = data;
+      if (!username || !password)
+        return json(res, 400, { error: 'Username and password are required.' });
+
+      const hash = hashPassword(password);
+      con.query(
+        'SELECT id FROM Admins WHERE username = ? AND password_hash = ?',
+        [username.trim(), hash],
+        (err, results) => {
+          if (err) return json(res, 500, { error: 'Database error' });
+          if (results.length === 0)
+            return json(res, 401, { error: 'Invalid username or password.' });
+
+          const token = crypto.randomBytes(32).toString('hex');
+          activeSessions.add(token);
+          json(res, 200, { success: true, token });
+        }
+      );
+    });
+
+  // ── POST /api/logout ── invalidate token ─────────────────────────────────────
+  } else if (method === 'POST' && pathname === '/api/logout') {
+    const token = getToken(req);
+    if (token) activeSessions.delete(token);
+    json(res, 200, { success: true });
+
+  // ── GET /api/admin/comments ── view all contact messages (protected) ─────────
+  } else if (method === 'GET' && pathname === '/api/admin/comments') {
+    if (!isAuthenticated(req)) return json(res, 401, { error: 'Unauthorised' });
+    con.query('SELECT * FROM Comments ORDER BY submitted_at DESC', (err, rows) => {
+      if (err) return json(res, 500, { error: 'Database error' });
+      json(res, 200, { comments: rows });
+    });
+
+  // ── GET /api/admin/subscribers ── view newsletter list (protected) ───────────
+  } else if (method === 'GET' && pathname === '/api/admin/subscribers') {
+    if (!isAuthenticated(req)) return json(res, 401, { error: 'Unauthorised' });
+    con.query('SELECT * FROM Subscribers ORDER BY subscribed_at DESC', (err, rows) => {
+      if (err) return json(res, 500, { error: 'Database error' });
+      json(res, 200, { subscribers: rows });
+    });
+
+  // ── Static file fallback ─────────────────────────────────────────────────────
+  } else {
+    let filePath = pathname === '/' ? './frontend/index.html' : './frontend' + pathname;
     const ext = path.extname(filePath);
     const mimeTypes = {
-      '.html': 'text/html',
-      '.js': 'text/javascript',
-      '.css': 'text/css',
-      '.json': 'application/json',
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.svg': 'image/svg+xml'
+      '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
+      '.json': 'application/json', '.png': 'image/png',
+      '.jpg': 'image/jpeg', '.svg': 'image/svg+xml'
     };
 
     fs.readFile(filePath, (err, content) => {
-      if (err) {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        return res.end('File not found');
-      }
-
+      if (err) { res.writeHead(404, { 'Content-Type': 'text/plain' }); return res.end('Not found'); }
       res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'text/plain' });
       res.end(content);
     });
   }
 });
 
-server.listen(8080, () => {
-  console.log('Server running at http://localhost:8080');
-});
+server.listen(8080, () => console.log('Server running at http://localhost:8080'));

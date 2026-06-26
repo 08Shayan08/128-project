@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | PulseReach Agency</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="navbar" aria-label="Primary navigation">
+      <a class="logo" href="index.html">PulseReach</a>
+      <button class="nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="team.html">Team</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><button class="btn-logout" id="logoutBtn">Log out</button></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <p class="eyebrow">Admin dashboard</p>
+      <h1>What's coming in from the site.</h1>
+      <p>All contact form submissions and newsletter signups stored in the database.</p>
+    </section>
+
+    <section class="section">
+      <div class="admin-stats" id="adminStats">
+        <div class="stat-card">
+          <span class="stat-value" id="commentCount">—</span>
+          <span class="stat-label">Contact messages</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="subscriberCount">—</span>
+          <span class="stat-label">Newsletter subscribers</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-heading">
+        <p class="eyebrow">Contact form</p>
+        <h2>Messages from the database</h2>
+      </div>
+      <div id="commentsTable">
+        <p class="loading-message">Loading messages...</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-heading">
+        <p class="eyebrow">Newsletter</p>
+        <h2>Subscribers from the database</h2>
+      </div>
+      <div id="subscribersTable">
+        <p class="loading-message">Loading subscribers...</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 PulseReach Agency. All rights reserved.</p>
+    <div class="social-links">
+      <a href="#">Instagram</a>
+      <a href="#">LinkedIn</a>
+      <a href="#">TikTok</a>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('adminToken');
+      if (!token) { window.location.href = 'login.html'; return; }
+
+      const navToggle = document.querySelector('.nav-toggle');
+      const navLinks = document.querySelector('.nav-links');
+      if (navToggle && navLinks) {
+        navToggle.addEventListener('click', () => {
+          const isOpen = navLinks.classList.toggle('open');
+          navToggle.setAttribute('aria-expanded', String(isOpen));
+        });
+      }
+
+      document.getElementById('logoutBtn').addEventListener('click', async () => {
+        await fetch('/api/logout', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        localStorage.removeItem('adminToken');
+        window.location.href = 'login.html';
+      });
+
+      function authHeaders() {
+        return { 'Authorization': 'Bearer ' + token };
+      }
+
+      function formatDate(iso) {
+        return new Date(iso).toLocaleString('en-GB', {
+          day: '2-digit', month: 'short', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        });
+      }
+
+      async function loadComments() {
+        const container = document.getElementById('commentsTable');
+        try {
+          const res = await fetch('/api/admin/comments', { headers: authHeaders() });
+          if (res.status === 401) { window.location.href = 'login.html'; return; }
+          const data = await res.json();
+          const rows = data.comments || [];
+
+          document.getElementById('commentCount').textContent = rows.length;
+
+          if (rows.length === 0) {
+            container.innerHTML = '<p class="loading-message">No messages yet.</p>';
+            return;
+          }
+
+          container.innerHTML = `
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Message</th>
+                  <th>Received</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.map(r => `
+                  <tr>
+                    <td>${r.id}</td>
+                    <td>${r.name}</td>
+                    <td>${r.email}</td>
+                    <td class="msg-cell">${r.message}</td>
+                    <td class="date-cell">${formatDate(r.submitted_at)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        } catch (err) {
+          container.innerHTML = '<p class="loading-message">Could not load messages.</p>';
+        }
+      }
+
+      async function loadSubscribers() {
+        const container = document.getElementById('subscribersTable');
+        try {
+          const res = await fetch('/api/admin/subscribers', { headers: authHeaders() });
+          if (res.status === 401) { window.location.href = 'login.html'; return; }
+          const data = await res.json();
+          const rows = data.subscribers || [];
+
+          document.getElementById('subscriberCount').textContent = rows.length;
+
+          if (rows.length === 0) {
+            container.innerHTML = '<p class="loading-message">No subscribers yet.</p>';
+            return;
+          }
+
+          container.innerHTML = `
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Email</th>
+                  <th>Subscribed</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.map(r => `
+                  <tr>
+                    <td>${r.id}</td>
+                    <td>${r.email}</td>
+                    <td class="date-cell">${formatDate(r.subscribed_at)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        } catch (err) {
+          container.innerHTML = '<p class="loading-message">Could not load subscribers.</p>';
+        }
+      }
+
+      loadComments();
+      loadSubscribers();
+    });
+  </script>
+</body>
+</html>

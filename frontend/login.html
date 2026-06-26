@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login | PulseReach Agency</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="navbar" aria-label="Primary navigation">
+      <a class="logo" href="index.html">PulseReach</a>
+      <button class="nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="team.html">Team</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <p class="eyebrow">Admin access</p>
+      <h1>Sign in to your dashboard.</h1>
+      <p>View contact submissions and newsletter subscribers.</p>
+    </section>
+
+    <section class="section">
+      <div class="auth-card">
+        <form id="loginForm" novalidate>
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" autocomplete="username">
+            <small class="error-message" id="usernameError"></small>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" autocomplete="current-password">
+            <small class="error-message" id="passwordError"></small>
+          </div>
+          <button class="btn btn-primary" type="submit">Sign In</button>
+          <p class="form-status" id="loginStatus" role="status" aria-live="polite"></p>
+        </form>
+        <p class="auth-hint">Default credentials: <code>admin</code> / <code>admin123</code></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 PulseReach Agency. All rights reserved.</p>
+    <div class="social-links">
+      <a href="#">Instagram</a>
+      <a href="#">LinkedIn</a>
+      <a href="#">TikTok</a>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Redirect if already logged in
+      if (localStorage.getItem('adminToken')) {
+        window.location.href = 'admin.html';
+        return;
+      }
+
+      const form = document.getElementById('loginForm');
+      const usernameInput = document.getElementById('username');
+      const passwordInput = document.getElementById('password');
+      const usernameError = document.getElementById('usernameError');
+      const passwordError = document.getElementById('passwordError');
+      const loginStatus = document.getElementById('loginStatus');
+
+      const navToggle = document.querySelector('.nav-toggle');
+      const navLinks = document.querySelector('.nav-links');
+      if (navToggle && navLinks) {
+        navToggle.addEventListener('click', () => {
+          const isOpen = navLinks.classList.toggle('open');
+          navToggle.setAttribute('aria-expanded', String(isOpen));
+        });
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        usernameError.textContent = '';
+        passwordError.textContent = '';
+        loginStatus.textContent = '';
+        loginStatus.className = 'form-status';
+
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+        let valid = true;
+
+        if (!username) { usernameError.textContent = 'Please enter your username.'; valid = false; }
+        if (!password) { passwordError.textContent = 'Please enter your password.'; valid = false; }
+        if (!valid) return;
+
+        try {
+          const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+          const data = await res.json();
+
+          if (res.ok && data.token) {
+            localStorage.setItem('adminToken', data.token);
+            window.location.href = 'admin.html';
+          } else {
+            loginStatus.textContent = data.error || 'Login failed.';
+            loginStatus.classList.add('form-status--error');
+          }
+        } catch (err) {
+          loginStatus.textContent = 'Could not connect to server.';
+          loginStatus.classList.add('form-status--error');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

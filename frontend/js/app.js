@@ -152,6 +152,48 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadPageData();
 
+  // Newsletter form — POST to /api/subscribe
+  const newsletterForm = document.querySelector("#newsletterForm");
+  if (newsletterForm) {
+    const newsletterEmail = document.querySelector("#newsletterEmail");
+    const newsletterError = document.querySelector("#newsletterError");
+    const newsletterStatus = document.querySelector("#newsletterStatus");
+
+    newsletterForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      newsletterError.textContent = "";
+      newsletterStatus.textContent = "";
+      newsletterStatus.className = "form-status";
+
+      const email = newsletterEmail.value.trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        newsletterError.textContent = "Please enter a valid email address.";
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          newsletterStatus.textContent = data.message;
+          newsletterStatus.classList.add("form-status--success");
+          newsletterForm.reset();
+        } else {
+          newsletterStatus.textContent = data.error || "Something went wrong.";
+          newsletterStatus.classList.add("form-status--error");
+        }
+      } catch (err) {
+        newsletterStatus.textContent = "Could not connect to server.";
+        newsletterStatus.classList.add("form-status--error");
+      }
+    });
+  }
+
   // Contact form — POST submission to Node.js backend
   const contactForm = document.querySelector("#contactForm");
   if (!contactForm) return;
