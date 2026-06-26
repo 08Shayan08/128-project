@@ -54,25 +54,23 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderTeam(team) {
     const teamList = document.querySelector("#teamList");
 
-    // Real photos for team members who provided them; fallback for others
     const photoMap = {
+      "Shayan": "/images/shayan.png",
       "Jeff":   "/images/jeff.png",
       "Jawhar": "/images/jawhar.png"
     };
-    const fallbackImages = [
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=700&q=80",
-      "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=700&q=80"
-    ];
-    let fallbackIndex = 0;
 
     if (!teamList) return;
 
     teamList.innerHTML = team
       .map((member) => {
-        const src = photoMap[member.name] || fallbackImages[fallbackIndex++ % fallbackImages.length];
+        const src = photoMap[member.name];
+        const imgHtml = src
+          ? `<img src="${src}" alt="${member.name}">`
+          : `<div class="team-avatar-blank" aria-hidden="true"></div>`;
         return `
           <article class="team-card">
-            <img src="${src}" alt="${member.name}">
+            ${imgHtml}
             <div>
               <h2>${member.name}</h2>
               <p>${member.role}</p>

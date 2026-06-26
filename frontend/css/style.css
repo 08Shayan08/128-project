@@ -394,6 +394,24 @@ h3 {
   width: 100%;
   aspect-ratio: 1 / 1;
   object-fit: cover;
+  object-position: top;
+}
+
+.team-avatar-blank {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--surface-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.team-avatar-blank::after {
+  content: "";
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--line);
 }
 
 .team-card div {
