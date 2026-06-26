@@ -289,6 +289,10 @@ const server = http.createServer((req, res) => {
       json(res, 200, { subscribers: rows });
     });
 
+  // ── Silence browser favicon.ico requests ────────────────────────────────────
+  } else if (pathname === '/favicon.ico') {
+    res.writeHead(204); return res.end();
+
   // ── Static file fallback ─────────────────────────────────────────────────────
   } else {
     let filePath = pathname === '/' ? './frontend/index.html' : './frontend' + pathname;
