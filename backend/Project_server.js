@@ -1,6 +1,5 @@
 const http = require('http');
 const fs = require('fs');
-const url = require('url');
 const mysql = require('mysql2');
 const path = require('path');
 const crypto = require('crypto');
@@ -180,8 +179,8 @@ function json(res, status, data) {
 // ── Request handler ───────────────────────────────────────────────────────────
 
 const server = http.createServer((req, res) => {
-  const reqUrl = url.parse(req.url, true);
-  const { pathname } = reqUrl;
+  const reqUrl = new URL(req.url, `http://localhost:8080`);
+  const pathname = reqUrl.pathname;
   const method = req.method;
 
   res.setHeader('Access-Control-Allow-Origin', '*');
