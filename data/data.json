@@ -22,10 +22,10 @@
     }
   ],
   "team": [
-    { "name": "Shayan", "role": "Founder" },
-    { "name": "Aisha Rahman", "role": "Marketing Strategist" },
-    { "name": "Nina Patel", "role": "Content Creator" },
-    { "name": "Lucas Bennett", "role": "Developer" }
+    { "name": "Shayan", "role": "Founder & CEO" },
+    { "name": "Hazim", "role": "Co-Founder & Creative Director" },
+    { "name": "Jeff", "role": "Co-Founder & Lead Developer" },
+    { "name": "Jawhar", "role": "Co-Founder & Marketing Strategist" }
   ],
   "testimonials": [
     { "name": "Amira Khalid", "text": "The team helped us clarify our brand message and turn social media into a real source of qualified leads." },

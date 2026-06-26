@@ -37,10 +37,10 @@ const seedData = {
     ['Influencer Marketing', 'Partnership planning, creator outreach, and campaign coordination with influencers who align with your audience. We focus on authentic collaborations that build trust and visibility.']
   ],
   Team: [
-    ['Shayan', 'Founder'],
-    ['Aisha Rahman', 'Marketing Strategist'],
-    ['Nina Patel', 'Content Creator'],
-    ['Lucas Bennett', 'Developer']
+    ['Shayan', 'Founder & CEO'],
+    ['Hazim', 'Co-Founder & Creative Director'],
+    ['Jeff', 'Co-Founder & Lead Developer'],
+    ['Jawhar', 'Co-Founder & Marketing Strategist']
   ],
   Testimonials: [
     ['Amira Khalid', 'The team helped us clarify our brand message and turn social media into a real source of qualified leads.'],
