@@ -53,25 +53,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderTeam(team) {
     const teamList = document.querySelector("#teamList");
-    const images = [
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=700&q=80",
+
+    // Real photos for team members who provided them; fallback for others
+    const photoMap = {
+      "Jeff":   "/images/jeff.png",
+      "Jawhar": "/images/jawhar.png"
+    };
+    const fallbackImages = [
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=700&q=80",
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=700&q=80",
       "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=700&q=80"
     ];
+    let fallbackIndex = 0;
 
     if (!teamList) return;
 
     teamList.innerHTML = team
-      .map((member, index) => `
-        <article class="team-card">
-          <img src="${images[index % images.length]}" alt="${member.name}">
-          <div>
-            <h2>${member.name}</h2>
-            <p>${member.role}</p>
-          </div>
-        </article>
-      `)
+      .map((member) => {
+        const src = photoMap[member.name] || fallbackImages[fallbackIndex++ % fallbackImages.length];
+        return `
+          <article class="team-card">
+            <img src="${src}" alt="${member.name}">
+            <div>
+              <h2>${member.name}</h2>
+              <p>${member.role}</p>
+            </div>
+          </article>
+        `;
+      })
       .join("");
   }
 
