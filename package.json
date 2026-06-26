@@ -1,0 +1,12 @@
+{
+  "name": "pulsereach-agency",
+  "version": "1.0.0",
+  "description": "PulseReach Agency – CSIT128 Assignment 2",
+  "main": "backend/Project_server.js",
+  "scripts": {
+    "start": "node backend/Project_server.js"
+  },
+  "dependencies": {
+    "mysql2": "^3.11.0"
+  }
+}

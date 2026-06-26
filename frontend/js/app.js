@@ -9,7 +9,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  const dataPath = "../data/data.json";
+  // Absolute path so fetch always hits the Node.js server (not the static file)
+  const dataPath = "/data/data.json";
 
   function getInitials(title) {
     return title
@@ -59,9 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=700&q=80"
     ];
 
-    if (!teamList) {
-      return;
-    }
+    if (!teamList) return;
 
     teamList.innerHTML = team
       .map((member, index) => `
@@ -78,10 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderTestimonials(testimonials) {
     const testimonialsList = document.querySelector("#testimonialsList");
-
-    if (!testimonialsList) {
-      return;
-    }
+    if (!testimonialsList) return;
 
     testimonialsList.innerHTML = testimonials
       .slice(0, 2)
@@ -94,10 +90,38 @@ document.addEventListener("DOMContentLoaded", () => {
       .join("");
   }
 
-  function showDataError() {
-    ["#servicesList", "#homeServices", "#teamList", "#testimonialsList"].forEach((selector) => {
-      const container = document.querySelector(selector);
+  function renderHistory(history) {
+    const historyList = document.querySelector("#historyList");
+    if (!historyList) return;
 
+    historyList.innerHTML = history
+      .map((entry) => `
+        <article class="history-card">
+          <span class="history-year">${entry.year}</span>
+          <p>${entry.milestone}</p>
+        </article>
+      `)
+      .join("");
+  }
+
+  function renderAwards(awards) {
+    const awardsList = document.querySelector("#awardsList");
+    if (!awardsList) return;
+
+    awardsList.innerHTML = awards
+      .map((award) => `
+        <article class="award-card">
+          <span class="award-year">${award.year}</span>
+          <h3>${award.title}</h3>
+          <p>${award.body}</p>
+        </article>
+      `)
+      .join("");
+  }
+
+  function showDataError() {
+    ["#servicesList", "#homeServices", "#teamList", "#testimonialsList", "#historyList", "#awardsList"].forEach((selector) => {
+      const container = document.querySelector(selector);
       if (container) {
         container.innerHTML = '<p class="loading-message">Content could not be loaded.</p>';
       }
@@ -105,23 +129,22 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadPageData() {
-    const needsData = document.querySelector("#servicesList, #homeServices, #teamList, #testimonialsList");
+    const needsData = document.querySelector(
+      "#servicesList, #homeServices, #teamList, #testimonialsList, #historyList, #awardsList"
+    );
 
-    if (!needsData) {
-      return;
-    }
+    if (!needsData) return;
 
     try {
       const response = await fetch(dataPath, { cache: "no-store" });
-
-      if (!response.ok) {
-        throw new Error("Data request failed");
-      }
+      if (!response.ok) throw new Error("Data request failed");
 
       const data = await response.json();
       renderServices(data.services || []);
       renderTeam(data.team || []);
       renderTestimonials(data.testimonials || []);
+      renderHistory(data.history || []);
+      renderAwards(data.awards || []);
     } catch (error) {
       showDataError();
     }
@@ -129,11 +152,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadPageData();
 
+  // Contact form — POST submission to Node.js backend
   const contactForm = document.querySelector("#contactForm");
-
-  if (!contactForm) {
-    return;
-  }
+  if (!contactForm) return;
 
   const fields = {
     name: document.querySelector("#name"),
@@ -157,9 +178,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function clearErrors() {
     Object.keys(errors).forEach((field) => setError(field, ""));
     formStatus.textContent = "";
+    formStatus.className = "form-status";
   }
 
-  contactForm.addEventListener("submit", (event) => {
+  contactForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     clearErrors();
 
@@ -183,11 +205,28 @@ document.addEventListener("DOMContentLoaded", () => {
       isValid = false;
     }
 
-    if (!isValid) {
-      return;
-    }
+    if (!isValid) return;
 
-    formStatus.textContent = "Thanks. Your message is ready to send once backend support is connected.";
-    contactForm.reset();
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, message })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        formStatus.textContent = "Thank you! Your message has been received.";
+        formStatus.classList.add("form-status--success");
+        contactForm.reset();
+      } else {
+        formStatus.textContent = result.error || "Something went wrong. Please try again.";
+        formStatus.classList.add("form-status--error");
+      }
+    } catch (err) {
+      formStatus.textContent = "Could not send message. Please check your connection.";
+      formStatus.classList.add("form-status--error");
+    }
   });
 });

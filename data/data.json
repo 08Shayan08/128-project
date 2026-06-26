@@ -22,39 +22,29 @@
     }
   ],
   "team": [
-    {
-      "name": "Shayan",
-      "role": "Founder"
-    },
-    {
-      "name": "",
-      "role": "Marketing Strategist"
-    },
-    {
-      "name": "Nina Patel",
-      "role": "Content Creator"
-    },
-    {
-      "name": "Lucas Bennett",
-      "role": "Developer"
-    }
+    { "name": "Shayan", "role": "Founder" },
+    { "name": "Aisha Rahman", "role": "Marketing Strategist" },
+    { "name": "Nina Patel", "role": "Content Creator" },
+    { "name": "Lucas Bennett", "role": "Developer" }
   ],
   "testimonials": [
-    {
-      "name": "Amira Khalid",
-      "text": "The team helped us clarify our brand message and turn social media into a real source of qualified leads."
-    },
-    {
-      "name": "Daniel Brooks",
-      "text": "Their content strategy gave our campaigns a sharper direction and noticeably improved engagement within weeks."
-    },
-    {
-      "name": "Sofia Martinez",
-      "text": "PulseReach brought structure, creativity, and clear reporting to every stage of our marketing workflow."
-    },
-    {
-      "name": "Ethan Wright",
-      "text": "Their paid advertising approach helped us scale confidently while keeping our acquisition costs under control."
-    }
+    { "name": "Amira Khalid", "text": "The team helped us clarify our brand message and turn social media into a real source of qualified leads." },
+    { "name": "Daniel Brooks", "text": "Their content strategy gave our campaigns a sharper direction and noticeably improved engagement within weeks." },
+    { "name": "Sofia Martinez", "text": "PulseReach brought structure, creativity, and clear reporting to every stage of our marketing workflow." },
+    { "name": "Ethan Wright", "text": "Their paid advertising approach helped us scale confidently while keeping our acquisition costs under control." }
+  ],
+  "history": [
+    { "year": 2020, "milestone": "PulseReach founded by Shayan with a vision to make social media marketing accessible to ambitious brands across the GCC." },
+    { "year": 2021, "milestone": "Expanded services to include content creation. Onboarded first 10 clients and built a dedicated creative team." },
+    { "year": 2022, "milestone": "Launched paid advertising division. Team grew to 8 people and surpassed 10M monthly impressions managed." },
+    { "year": 2023, "milestone": "Reached 50M monthly impressions milestone. Recognized at the MENA Marketing Summit for excellence in digital campaigns." },
+    { "year": 2024, "milestone": "Expanded influencer marketing offering. Grew to 80+ active brand clients and opened a second office in Dubai." },
+    { "year": 2025, "milestone": "Managing 120M+ monthly impressions for 100+ brands. Named one of the fastest-growing agencies in the Middle East." }
+  ],
+  "awards": [
+    { "year": 2022, "title": "Best Digital Agency", "body": "Dubai Business Awards" },
+    { "year": 2023, "title": "Top Social Media Agency", "body": "MENA Marketing Summit" },
+    { "year": 2024, "title": "Excellence in Paid Media", "body": "Global Ad Awards" },
+    { "year": 2025, "title": "Fastest Growing Agency", "body": "Forbes Middle East" }
   ]
-} 
+}

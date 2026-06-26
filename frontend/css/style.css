@@ -545,6 +545,105 @@ textarea:focus {
   }
 }
 
+/* ── Company History ─────────────────────────────── */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+}
+
+.history-list::before {
+  content: "";
+  position: absolute;
+  left: 72px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--accent), var(--accent-strong));
+  opacity: 0.3;
+}
+
+.history-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.history-card:last-child {
+  border-bottom: none;
+}
+
+.history-year {
+  flex-shrink: 0;
+  width: 72px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.history-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+/* ── Awards ──────────────────────────────────────── */
+.card-grid.four {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.award-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.award-year {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.award-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.award-card p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+/* ── Form status states ──────────────────────────── */
+.form-status--success {
+  color: var(--success);
+}
+
+.form-status--error {
+  color: var(--error);
+}
+
+/* ── Responsive breakpoints ──────────────────────── */
+@media (max-width: 900px) {
+  .card-grid.four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 640px) {
   .navbar,
   main,
@@ -560,6 +659,7 @@ textarea:focus {
 
   .hero-panel,
   .card-grid.three,
+  .card-grid.four,
   .team-grid {
     grid-template-columns: 1fr;
   }
@@ -572,5 +672,9 @@ textarea:focus {
 
   .btn {
     width: 100%;
+  }
+
+  .history-list::before {
+    display: none;
   }
 }
